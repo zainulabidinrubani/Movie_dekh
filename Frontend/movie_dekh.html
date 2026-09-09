@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movie Dekh | AI Movie Recommendations</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Patrick+Hand&display=swap');
+
+:root {
+  --bg:#050505; --panel:#0c0c0d; --panel2:#111113; --text:#f6f6f6;
+  --muted:#929292; --line:#242426; --red:#ef2b22; --red2:#ff5149;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif;overflow-x:hidden}
+body.modal-open {overflow:hidden;}
+button,input{font:inherit}
+button{cursor:pointer}
+a{color:inherit;text-decoration:none}
+
+body:before{
+ content:"";position:fixed;inset:0;pointer-events:none;z-index:20;
+ background:radial-gradient(circle at 75% 15%,rgba(255,255,255,.035),transparent 28%),
+            linear-gradient(transparent 97%,rgba(255,255,255,.018));
+}
+
+.nav{
+ position:absolute;z-index:10;top:0;left:0;right:0;height:86px;padding:18px 5%;
+ display:flex;align-items:center;gap:42px;
+ background:linear-gradient(180deg,rgba(0,0,0,.85),transparent);
+}
+.logo{width:230px;display:block}
+.nav-links{display:flex;gap:34px;align-items:center;margin-left:20px}
+.nav-links a{font-size:14px;color:#aaa;transition:.25s}
+.nav-links a:hover,.nav-links a.active{color:#fff}
+.nav-links a.active:after{content:"";display:block;width:44px;height:2px;background:var(--red);margin:14px auto 0}
+
+/* SEARCH DROPDOWN STYLES */
+.search-container {position: relative; margin-left: auto;}
+.search{display:flex;align-items:center;gap:12px;background:rgba(20,20,20,.78);border:1px solid #303033;border-radius:28px;padding:0 18px;width:min(390px,30vw);height:44px}
+.search svg{width:18px;flex:none}
+.search input{background:none;border:0;outline:0;color:#fff;width:100%;font-size:13px}
+.search-dropdown {
+  position: absolute; top: 54px; right: 0; width: 100%;
+  background: #111113; border: 1px solid #303033; border-radius: 12px;
+  max-height: 400px; overflow-y: auto; z-index: 100; display: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+.search-dropdown.active {display: block; animation: pop 0.2s ease;}
+.search-item {display: flex; gap: 12px; padding: 10px; cursor: pointer; border-bottom: 1px solid #242426; transition: background 0.2s;}
+.search-item:hover {background: #1a1a1c;}
+.search-item img {width: 40px; height: 60px; object-fit: cover; border-radius: 4px;}
+.search-item-info {display: flex; flex-direction: column; justify-content: center;}
+.search-item-title {font-size: 14px; font-weight: 600; color: #fff;}
+.search-item-year {font-size: 12px; color: #888;}
+
+.hero{
+ min-height:680px;position:relative;overflow:hidden;padding:150px 5% 70px;
+ display:flex;align-items:center;
+}
+.hero-collage{position:absolute;inset:-7% -4% 0 33%;display:grid;grid-template-columns:repeat(3,1fr);gap:9px;transform:rotate(-3deg) scale(1.1);opacity:.62}
+.hero-collage:after{content:"";position:absolute;inset:0;background:
+ linear-gradient(90deg,#050505 0%,rgba(5,5,5,.78) 19%,rgba(5,5,5,.2) 55%,rgba(5,5,5,.65) 100%),
+ linear-gradient(0deg,#050505 2%,transparent 48%,rgba(0,0,0,.45));}
+.hero-collage img{width:100%;height:250px;object-fit:cover;filter:grayscale(.72) contrast(1.08) brightness(.65);border-radius:8px}
+.hero-copy{position:relative;z-index:2;max-width:610px}
+.eyebrow{font-size:13px;letter-spacing:3px;color:#ddd;text-transform:uppercase;margin-bottom:20px}
+.eyebrow:after{content:"";display:inline-block;width:32px;height:2px;background:#eee;vertical-align:middle;margin-left:12px}
+.hero h1{font-family:"Patrick Hand",cursive;font-size:70px;line-height:.95;margin:0 0 22px;letter-spacing:1px}
+.hero h1 .red{color:var(--red)}
+.hero p{color:#bdbdbd;line-height:1.7;max-width:520px;font-size:15px}
+.cta{margin-top:28px;display:inline-flex;align-items:center;gap:12px;border:1px solid var(--red);background:var(--red);color:#fff;border-radius:28px;padding:14px 23px;font-weight:700;box-shadow:0 0 28px rgba(239,43,34,.16);transition:.25s; text-decoration:none;}
+.cta:hover{transform:translateY(-2px);box-shadow:0 0 35px rgba(239,43,34,.35)}
+.cta .circle{width:28px;height:28px;border-radius:50%;background:#fff;color:var(--red);display:grid;place-items:center;font-size:11px}
+
+.moodey{
+ border:1px solid rgba(239,43,34,.65);font:inherit;color:inherit;text-align:left;cursor:pointer;
+ position:absolute;right:5%;bottom:105px;z-index:5;width:315px;border-radius:22px;padding:17px 18px;
+ background:linear-gradient(135deg,rgba(35,35,37,.92),rgba(12,12,13,.9));
+ box-shadow:0 0 38px rgba(239,43,34,.10);display:flex;align-items:center;gap:15px;
+}
+.bot{width:64px;height:52px;border-radius:22px;background:#f4f4f4;position:relative;display:grid;place-items:center;box-shadow:0 0 18px rgba(255,255,255,.28)}
+.bot:before{content:"";width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:20px 0 var(--red)}
+.bot:after{content:"";position:absolute;width:2px;height:9px;background:#fff;top:-8px}
+.moodey b{font-size:20px;font-family:"Patrick Hand",cursive}
+.moodey small{display:block;color:#aaa;margin-top:2px}
+.moodey-arrow{margin-left:auto;display:grid;place-items:center;background:var(--red);color:#fff;width:40px;height:40px;border-radius:50%;font-size:18px;transition:.25s}
+.moodey:hover .moodey-arrow{transform:translateX(3px)}
+.moodey:hover{transform:translateY(-3px);box-shadow:0 0 45px rgba(239,43,34,.22)}
+.tip{position:absolute;right:10px;bottom:78px;background:#161618;border:1px solid #6b2220;border-radius:14px;padding:9px 13px;font-size:11px;color:#eee;white-space:nowrap}
+
+.section{padding:28px 5% 10px}
+.section-head{display:flex;align-items:end;justify-content:space-between;margin-bottom:18px}
+.section-title{font-family:"Patrick Hand",cursive;font-size:30px;margin:0}
+.section-sub{color:#888;font-size:12px;margin-top:4px}
+
+.row{display:flex;gap:14px;overflow-x:auto;padding:4px 3px 22px;scrollbar-width:none;scroll-behavior:smooth}
+.row::-webkit-scrollbar{display:none}
+.movie-card{flex:0 0 154px;min-width:154px;transition:.3s;cursor:pointer}
+.movie-card:hover{transform:translateY(-7px)}
+.poster-wrap{height:225px;position:relative;border-radius:11px;overflow:hidden;background:#171719;border:1px solid #27272a}
+.poster-wrap img{width:100%;height:100%;object-fit:cover;display:block;transition:.35s}
+.movie-card:hover img{transform:scale(1.045);filter:brightness(.68)}
+.movie-info{padding:9px 2px 0}
+.movie-info h3{font-size:12px;margin:0 0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.movie-info span{font-size:10px;color:#777;margin-right:8px}
+.movie-info .rating{color:#d8d8d8}
+.poster-fallback{display:grid;place-items:center;padding:15px;text-align:center}
+.poster-fallback-text{display:none;color:#aaa;font-family:"Patrick Hand",cursive;font-size:16px;padding:15px;text-align:center;}
+.poster-fallback .poster-fallback-text{display:block}
+
+/* STREAMING MODAL STYLES */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.85); z-index: 200; display: none;
+  align-items: center; justify-content: center; backdrop-filter: blur(5px);
+}
+.modal-overlay.open {display: flex; animation: fadeIn 0.2s ease;}
+@keyframes fadeIn {from{opacity:0;} to{opacity:1;}}
+.modal-content {
+  background: #0c0c0d; width: 90%; max-width: 850px; height: 90vh;
+  border-radius: 16px; overflow-y: auto; position: relative;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid #27272a;
+}
+.modal-close {
+  position: absolute; top: 15px; right: 15px; background: #000;
+  color: #fff; border: 2px solid #333; width: 36px; height: 36px; border-radius: 50%;
+  font-size: 20px; cursor: pointer; z-index: 10; display: grid; place-items: center; transition: 0.2s;
+}
+.modal-close:hover {background: var(--red); border-color: var(--red);}
+.modal-hero {width: 100%; height: 400px; position: relative; background-size: cover; background-position: top center; background-repeat: no-repeat;}
+.modal-hero-gradient {position: absolute; inset: 0; background: linear-gradient(0deg, #0c0c0d 0%, rgba(12,12,13,0.6) 40%, transparent 100%);}
+.modal-body {padding: 0 40px 40px; position: relative; top: -80px;}
+.modal-title {font-family: "Patrick Hand", cursive; font-size: 52px; margin: 0 0 10px 0; text-shadow: 0 2px 15px rgba(0,0,0,0.8);}
+.modal-meta {color: #aaa; font-size: 14px; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;}
+.modal-overview {font-size: 16px; line-height: 1.6; color: #ddd; max-width: 650px; margin-bottom: 25px;}
+
+.tags{display:flex;gap:8px;flex-wrap:wrap;}
+.tag{border:1px solid #363639;border-radius:20px;padding:5px 12px;font-size:11px;color:#bbb; background:rgba(255,255,255,0.05);}
+
+footer{border-top:1px solid #19191b;margin-top:30px;padding:35px 5%;display:flex;justify-content:space-between;color:#666;font-size:11px}
+
+/* CHAT STYLING WITH CLOSE BUTTON */
+.chat-panel{
+  position:fixed;right:25px;bottom:25px;width:340px;height:480px;z-index:300;
+  background:#0d0d0f;border:1px solid #333;border-radius:20px;display:none;
+  flex-direction:column;overflow:hidden;box-shadow:0 20px 70px rgba(0,0,0,0.9);
+}
+.chat-panel.open{display:flex;animation:pop .2s ease}
+@keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.chat-head{padding:14px 16px;border-bottom:1px solid #27272a;display:flex;align-items:center;gap:10px}
+.chat-head strong{font-family:"Patrick Hand",cursive;font-size:22px}
+.chat-close-btn{
+  margin-left:auto;background:none;border:none;color:#888;font-size:22px;
+  cursor:pointer;line-height:1;width:30px;height:30px;border-radius:50%;
+  display:grid;place-items:center;transition:.2s;
+}
+.chat-close-btn:hover{background:#222;color:#fff;}
+.chat-body{padding:15px;flex:1;overflow:auto}
+.msg{max-width:85%;padding:10px 12px;border-radius:13px;margin-bottom:9px;font-size:13px;line-height:1.5}
+.bot-msg{background:#19191b;color:#ddd}
+.user-msg{background:var(--red);margin-left:auto}
+.chat-input{display:flex;gap:7px;padding:11px;border-top:1px solid #27272a}
+.chat-input input{flex:1;background:#171719;border:1px solid #2a2a2d;border-radius:18px;color:#fff;padding:9px 12px;outline:0}
+.chat-input button{border:0;background:var(--red);color:#fff;border-radius:18px;padding:0 15px}
+
+.shimmer{animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:.7}}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <!-- Original image-based logo restored here -->
+  <a href="#" aria-label="Movie Dekh home">
+    <img class="logo" src="logo-01.png" alt="Movie Dekh">
+  </a>
+  <nav class="nav-links">
+    <a class="active" href="#home">Home</a>
+    <a href="#trendingSection">Trending</a>
+    <a href="#latestSection">Latest</a>
+    <a href="#recommendedSection">Top Rated</a>
+  </nav>
+  
+  <div class="search-container">
+    <label class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+      <input id="searchBox" placeholder="Search movies, actors, genres..." aria-label="Search movies" autocomplete="off">
+    </label>
+    <div id="searchDropdown" class="search-dropdown"></div>
+  </div>
+</header>
+
+<main id="home">
+<section class="hero">
+  <div class="hero-collage" id="heroCollage"></div>
+  <div class="hero-copy">
+    <div class="eyebrow">Powered by TMDB & AI</div>
+    <h1>Not Just Movies,<br>It's <span class="red">Your Story.</span></h1>
+    <p>Discover movies based on what you love. Live recommendations and posters powered by TMDB and our chaotic AI agent Moodey.</p>
+    <a class="cta" href="#trendingSection"><span class="circle">▶</span> Start Exploring</a>
+  </div>
+
+  <button class="moodey" id="moodeyHero" onclick="openChat()" aria-label="Open Moodey AI Movie Assistant">
+    <div class="tip">Ask Moodey for recommendations or movie breakdowns!</div>
+    <div class="bot"></div>
+    <div><b>Moodey</b><small>Your AI Movie Assistant</small></div>
+    <span class="moodey-arrow">→</span>
+  </button>
+</section>
+
+<!-- TRENDING SECTION -->
+<section class="section" id="trendingSection">
+  <div class="section-head">
+    <div>
+      <h2 class="section-title">🔥 Trending Now</h2>
+      <div class="section-sub">Direct from TMDB daily charts.</div>
+    </div>
+  </div>
+  <div class="row" id="trendingRow">
+    <div class="shimmer" style="color:#666; padding:20px;">Fetching TMDB movies...</div>
+  </div>
+</section>
+
+<!-- LATEST RELEASES SECTION -->
+<section class="section" id="latestSection">
+  <div class="section-head">
+    <div>
+      <h2 class="section-title">🍿 Now Playing</h2>
+      <div class="section-sub">The newest releases, live from theaters.</div>
+    </div>
+  </div>
+  <div class="row" id="latestRow">
+    <div class="shimmer" style="color:#666; padding:20px;">Fetching latest movies...</div>
+  </div>
+</section>
+
+<!-- TOP RATED SECTION -->
+<section class="section" id="recommendedSection">
+  <div class="section-head">
+    <div>
+      <h2 class="section-title">★ Top Rated Classics</h2>
+      <div class="section-sub">Highest rated picks from TMDB.</div>
+    </div>
+  </div>
+  <div class="row" id="recommendedRow">
+    <div class="shimmer" style="color:#666; padding:20px;">Fetching TMDB movies...</div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <span>© 2026 Movie Dekh</span>
+  <span>Connected to FastAPI & TMDB API</span>
+</footer>
+
+<!-- STREAMING STYLE MOVIE MODAL -->
+<div class="modal-overlay" id="movieModal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeMovieModal()">&times;</button>
+    <div id="modalBodyContent">
+        <!-- Content gets injected here via JS -->
+    </div>
+  </div>
+</div>
+
+<!-- MOODEY CHAT PANEL -->
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-head">
+    <div class="bot" style="width:36px;height:30px;border-radius:12px"></div>
+    <strong>Moodey</strong>
+    <span style="color:#777;font-size:11px;margin-left:5px;">AI Agent</span>
+    <button class="chat-close-btn" onclick="closeChat()" title="Close chat">&times;</button>
+  </div>
+  <div class="chat-body" id="chatBody">
+    <div class="msg bot-msg">Hey! I'm Moodey. Tell me your mood, ask about a plot, or select a movie to roast it.</div>
+  </div>
+  <div class="chat-input">
+    <input id="chatInput" placeholder="Ask Moodey anything..." onkeydown="if(event.key==='Enter')sendChat()">
+    <button onclick="sendChat()">Send</button>
+  </div>
+</div>
+
+<script>
+function generateMovieCardsHtml(movies) {
+  if (!movies || movies.length === 0) return '<div style="color:#888; padding:20px;">No movies found.</div>';
+  return movies.map(m => {
+    const poster = m.poster_url || (m.poster_path ? 'https://image.tmdb.org/t/p/w500' + m.poster_path : '');
+    const title = m.title || m.name || 'Untitled';
+    const year = (m.release_date || '').split('-')[0] || 'N/A';
+    const rating = m.vote_average ? Number(m.vote_average).toFixed(1) : 'N/A';
+    const id = m.tmdb_id || m.id;
+
+    return `
+      <article class="movie-card" onclick="openMovieModal(${id})">
+        <div class="poster-wrap ${!poster ? 'poster-fallback' : ''}">
+          ${poster ? `<img src="${poster}" alt="${title}" loading="lazy" onerror="this.style.display='none';this.parentElement.classList.add('poster-fallback')">` : ''}
+          <div class="poster-fallback-text">${title}</div>
+        </div>
+        <div class="movie-info">
+          <h3 title="${title}">${title}</h3>
+          <span>${year}</span>
+          <span class="rating">★ ${rating}</span>
+        </div>
+      </article>
+    `;
+  }).join('');
+}
+
+function renderMovieCards(containerId, movies) {
+  document.getElementById(containerId).innerHTML = generateMovieCardsHtml(movies);
+}
+
+// Load Home Categories on Startup
+async function loadTMDBContent() {
+  try {
+    // 1. Trending Movies
+    const resTrending = await fetch('/home?category=trending&limit=18');
+    if (resTrending.ok) {
+      const trending = await resTrending.json();
+      renderMovieCards('trendingRow', trending);
+      
+      const collage = document.getElementById('heroCollage');
+      collage.innerHTML = trending.slice(0, 6).map(m => 
+        m.poster_url ? `<img src="${m.poster_url}" alt="" loading="lazy">` : ''
+      ).join('');
+    }
+
+    // 2. Latest Releases (Now Playing)
+    const resLatest = await fetch('/home?category=now_playing&limit=18');
+    if (resLatest.ok) {
+      const latest = await resLatest.json();
+      renderMovieCards('latestRow', latest);
+    }
+
+    // 3. Top Rated Movies
+    const resTop = await fetch('/home?category=top_rated&limit=18');
+    if (resTop.ok) {
+      const topRated = await resTop.json();
+      renderMovieCards('recommendedRow', topRated);
+    }
+  } catch (err) {
+    console.error("Failed to load TMDB content:", err);
+  }
+}
+
+// LIVE SEARCH DROPDOWN
+let searchDebounce = null;
+document.getElementById('searchBox').addEventListener('input', e => {
+  const query = e.target.value.trim();
+  const dropdown = document.getElementById('searchDropdown');
+  clearTimeout(searchDebounce);
+
+  if (!query) {
+    dropdown.classList.remove('active');
+    return;
+  }
+
+  dropdown.classList.add('active');
+  dropdown.innerHTML = '<div style="padding:15px; color:#888; text-align:center;">Searching...</div>';
+
+  searchDebounce = setTimeout(async () => {
+    try {
+      const res = await fetch(`/tmdb/search?query=${encodeURIComponent(query)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const results = data.results || [];
+        
+        if(results.length === 0) {
+           dropdown.innerHTML = '<div style="padding:15px; color:#888; text-align:center;">No results found.</div>';
+           return;
+        }
+        
+        dropdown.innerHTML = results.slice(0, 8).map(m => {
+           const poster = m.poster_path ? 'https://image.tmdb.org/t/p/w500' + m.poster_path : '';
+           const title = m.title || m.name || 'Untitled';
+           const year = (m.release_date || '').split('-')[0] || 'N/A';
+           return `
+             <div class="search-item" onclick="openMovieModal(${m.id}); document.getElementById('searchDropdown').classList.remove('active');">
+               ${poster ? `<img src="${poster}" alt="">` : `<div style="width:40px;height:60px;background:#222;border-radius:4px;display:grid;place-items:center;font-size:10px;">No Img</div>`}
+               <div class="search-item-info">
+                 <div class="search-item-title">${title}</div>
+                 <div class="search-item-year">${year}</div>
+               </div>
+             </div>
+           `;
+        }).join('');
+      }
+    } catch (err) {
+      dropdown.innerHTML = '<div style="color:#ff5149; padding:15px;">Search failed.</div>';
+    }
+  }, 350);
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.search-container')) {
+    document.getElementById('searchDropdown').classList.remove('active');
+  }
+});
+
+// MOVIE MODAL & RECOMMENDATIONS
+function closeMovieModal() {
+  document.getElementById('movieModal').classList.remove('open');
+  document.body.classList.remove('modal-open');
+}
+
+async function openMovieModal(tmdb_id) {
+  const modal = document.getElementById('movieModal');
+  const content = document.getElementById('modalBodyContent');
+  
+  modal.classList.add('open');
+  document.body.classList.add('modal-open');
+  content.innerHTML = '<div style="padding:100px; text-align:center; font-size:20px;" class="shimmer">Loading movie details...</div>';
+
+  try {
+    const [detailsRes, recsRes] = await Promise.all([
+      fetch(`/movie/id/${tmdb_id}`),
+      fetch(`/recommend/genre?tmdb_id=${tmdb_id}&limit=12`)
+    ]);
+
+    const details = await detailsRes.json();
+    const recs = await recsRes.json();
+
+    const year = (details.release_date || '').split('-')[0] || 'N/A';
+    const backdrop = details.backdrop_url || details.poster_url || '';
+    const bgStyle = backdrop ? `background-image: url('${backdrop}');` : 'background-color: #222;';
+    
+    let genresHtml = '';
+    if(details.genres && details.genres.length > 0) {
+        genresHtml = '<div class="tags">' + details.genres.map(g => `<span class="tag">${g.name}</span>`).join('') + '</div>';
+    }
+
+    let html = `
+      <div class="modal-hero" style="${bgStyle}">
+        <div class="modal-hero-gradient"></div>
+      </div>
+      <div class="modal-body">
+        <h1 class="modal-title">${details.title}</h1>
+        <div class="modal-meta">
+            <span style="font-weight:bold; color:#fff;">${year}</span>
+            ${genresHtml}
+        </div>
+        <p class="modal-overview">${details.overview || 'No plot overview available.'}</p>
+        
+        <button class="cta" style="margin-bottom:40px;" onclick="askMoodeyAbout('${escapeJs(details.title)}')">
+            <span class="circle">🤖</span> Ask Moodey About This
+        </button>
+
+        <h3 style="font-family:'Patrick Hand',cursive; font-size:28px; margin-bottom:15px; border-top:1px solid #222; padding-top:30px;">More Like This</h3>
+        <div class="row" style="padding-bottom:10px;">
+          ${generateMovieCardsHtml(recs)}
+        </div>
+      </div>
+    `;
+    
+    content.innerHTML = html;
+
+  } catch (err) {
+    content.innerHTML = '<div style="padding:100px; text-align:center; color:#ff5149; font-size:20px;">Failed to load movie details.</div>';
+  }
+}
+
+// MOODEY AGENT CHAT
+function openChat() {
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('chatInput').focus();
+}
+
+function closeChat() {
+  document.getElementById('chatPanel').classList.remove('open');
+}
+
+function askMoodeyAbout(movieTitle) {
+  openChat();
+  document.getElementById('chatInput').value = `Tell me about ${movieTitle}`;
+  sendChat();
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const body = document.getElementById('chatBody');
+
+  body.insertAdjacentHTML('beforeend', `<div class="msg user-msg">${escapeHtml(text)}</div>`);
+  input.value = '';
+  body.scrollTop = body.scrollHeight;
+
+  const loadingId = "loading-" + Date.now();
+  body.insertAdjacentHTML('beforeend', `<div id="${loadingId}" class="msg bot-msg shimmer">Moodey is judging your taste...</div>`);
+  body.scrollTop = body.scrollHeight;
+
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, thread_id: "html-session-1" })
+    });
+
+    const data = await res.json();
+    document.getElementById(loadingId).remove();
+
+    let reply = escapeHtml(data.response || '')
+      .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+      .replace(/\*(.*?)\*/g, '<i>$1</i>')
+      .replace(/!\[(.*?)\]\((.*?)\)/g, '<br><img src="$2" alt="$1" style="max-width:100%; border-radius:8px; margin:8px 0;"><br>');
+
+    body.insertAdjacentHTML('beforeend', `<div class="msg bot-msg">${reply}</div>`);
+  } catch (err) {
+    document.getElementById(loadingId).remove();
+    body.insertAdjacentHTML('beforeend', `<div class="msg bot-msg" style="color:#ff5149;">Failed to reach Moodey. Is the FastAPI server running?</div>`);
+  }
+
+  body.scrollTop = body.scrollHeight;
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
+}
+function escapeJs(s) {
+  return s.replace(/'/g, "\\'");
+}
+
+document.addEventListener('DOMContentLoaded', loadTMDBContent);
+</script>
+</body>
+</html>
