@@ -192,7 +192,7 @@ agent_tools = [search_tmdb_movie, search]
 agent_memory = InMemorySaver()
 
 llm = init_chat_model(
-    "qwen/qwen3.6-27b",
+    "qwen/qwen3.8-27b",
     model_provider="GROQ",
     temperature=0.9,
     reasoning_effort="none",
